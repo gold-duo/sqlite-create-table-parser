@@ -21,18 +21,18 @@ public class Parser {
 	public void createTableStatement() throws Exception{
 		boolean isTemporary=false;
 		//create (temp|temporary)? table
-		match(Lexer.CREATE);
-		if(!tryMatch(Lexer.TEMP)){
-			isTemporary=tryMatch(Lexer.TEMPORARY);
+		match(Token.CREATE);
+		if(!tryMatch(Token.TEMP)){
+			isTemporary=tryMatch(Token.TEMPORARY);
 		}else{
 			isTemporary=true;
 		}
-		match(Lexer.TABLE);
+		match(Token.TABLE);
 		
 		// if not exists
-		if(tryMatch(Lexer.IF)){
-			match(Lexer.NOT);
-			match(Lexer.EXISTS);
+		if(tryMatch(Token.IF)){
+			match(Token.NOT);
+			match(Token.EXISTS);
 		}
 		
 		//table name
@@ -40,17 +40,17 @@ public class Parser {
 		
 		columnList();
 		
-		tryMatch(Lexer.SEMI);
-		match(Lexer.EOF);
+		tryMatch(Token.SEMI);
+		match(Token.EOF);
 	}
 	
 	private void columnList() throws Exception{
-		match(Lexer.LPARENT);
+		match(Token.LPAREN);
 		column();
-		while(tryMatch(Lexer.COMMA)){
+		while(tryMatch(Token.COMMA)){
 			column();
 		}
-		match(Lexer.RPARENT);
+		match(Token.RPAREN);
 	}
 	
 	private void column() throws Exception{
@@ -67,14 +67,14 @@ public class Parser {
 	
 	private void tblName(boolean isTemporary) throws Exception {
 		Token token=null;
-		if (tryMatch(Lexer.LBRACKET)) {
-			if(LA(1)== Lexer.ID){
+		if (tryMatch(Token.LBRACKET)) {
+			if(LA(1)== Token.ID){
 				token=LT(1);
 //				token.text="["+token.text+"]";
 				consume();
-				match(Lexer.RBRACKET);
+				match(Token.RBRACKET);
 			}
-		} else if (LA(1) == Lexer.ID) {
+		} else if (LA(1) == Token.ID) {
 			token=LT(1);
 			consume();
 		}
@@ -89,14 +89,14 @@ public class Parser {
 	
 	private void colName() throws Exception {
 		Token token=null;
-		if (tryMatch(Lexer.LBRACKET)) {
-			if(LA(1)== Lexer.ID){
+		if (tryMatch(Token.LBRACKET)) {
+			if(LA(1)== Token.ID){
 				token=LT(1);
 //				token.text="["+token.text+"]";
 				consume();
-				match(Lexer.RBRACKET);
+				match(Token.RBRACKET);
 			}
-		} else if (LA(1) == Lexer.ID) {
+		} else if (LA(1) == Token.ID) {
 			token=LT(1);
 			consume();
 		}
@@ -111,18 +111,18 @@ public class Parser {
 	
 	private void colType() throws Exception {
 		Token tk = LT(1);
-		if (tk.type == Lexer.ID && isType(tk.text)) {
+		if (tk.type == Token.ID && isType(tk.text)) {
 //			LOG("colType--" + tk.text);
 			mColumnNode.setType(tk.text);
 			consume();
 
-			if ( tryMatch(Lexer.LPARENT) ) {
-				if (LA(1) == Lexer.INT) {
+			if ( tryMatch(Token.LPAREN) ) {
+				if (LA(1) == Token.INT) {
 					mColumnNode.setTypeMinSize(Integer.parseInt(LT(1).text));
 					consume();
 
-					if ( tryMatch(Lexer.COMMA)) {
-						if (LA(1) == Lexer.INT) {
+					if ( tryMatch(Token.COMMA)) {
+						if (LA(1) == Token.INT) {
 							mColumnNode.setTypeMaxSize(Integer.parseInt(LT(1).text));
 							consume();
 						} else {
@@ -132,7 +132,7 @@ public class Parser {
 				} else {
 					throw new Exception(LT(1).text+ ":不是数字！");
 				}
-				match(Lexer.RPARENT);
+				match(Token.RPAREN);
 			}
 		} else {
 			throw new Exception("无法识别类型:" + tk.text);
@@ -152,8 +152,8 @@ public class Parser {
 	}
 	
 	private boolean contraintPrimaryKey() throws Exception{
-		if(tryMatch(Lexer.PRIMARY)){
-			if (LA(1) == Lexer.KEY) {
+		if(tryMatch(Token.PRIMARY)){
+			if (LA(1) == Token.KEY) {
 				mColumnNode.setContraint(ColumnNode.PRIMARYKEY);
 				consume();
 //				LOG("contraintPrimaryKey");
@@ -166,7 +166,7 @@ public class Parser {
 	}
 	
 	private boolean contraintUnique() throws Exception{
-		if(LA(1)==Lexer.UNIQUE){
+		if(LA(1)==Token.UNIQUE){
 			mColumnNode.setContraint(ColumnNode.UNIQUE);
 			consume();
 //			LOG("contraintUnique");
@@ -176,7 +176,7 @@ public class Parser {
 	}
 	
 	private boolean contraintAutoincrement() throws Exception{
-		if(LA(1)==Lexer.AUTOINCREMENT){
+		if(LA(1)==Token.AUTOINCREMENT){
 			mColumnNode.setContraint(ColumnNode.AUTO);
 			consume();
 //			LOG("contraintAutoincrement");
@@ -186,8 +186,8 @@ public class Parser {
 	}
 	
 	private boolean contraintNotNull() throws Exception{
-		if(tryMatch(Lexer.NOT)){
-			if( LA(1)==Lexer.NULL){
+		if(tryMatch(Token.NOT)){
+			if( LA(1)==Token.NULL){
 				mColumnNode.setContraint(ColumnNode.NOTNULL);
 				consume();
 //				LOG("contraintNotNull");
@@ -202,8 +202,8 @@ public class Parser {
 	private void defaultVaule() throws Exception{
 		Token tk=LT(1);
 		int la =tk.type;
-		if (la==Lexer.STRING||la==Lexer.INT||la==Lexer.FLOAT){
-			mColumnNode.setDefaultValue(la==Lexer.STRING?  "'"+tk.text+"'": tk.text);
+		if (la==Token.STRING||la==Token.INT||la==Token.FLOAT){
+			mColumnNode.setDefaultValue(la==Token.STRING?  "'"+tk.text+"'": tk.text);
 			consume();
 		}else{
 			throw new Exception(tk.text+":default 值不为数字或字符串!");
@@ -212,10 +212,10 @@ public class Parser {
 	
 	private boolean contraintDefault() throws Exception{
 		boolean ret =true;
-		if(tryMatch(Lexer.DEFAULT)){
-			if(tryMatch(Lexer.LPARENT)){
+		if(tryMatch(Token.DEFAULT)){
+			if(tryMatch(Token.LPAREN)){
 				defaultVaule();
-				match(Lexer.RPARENT);
+				match(Token.RPAREN);
 			}else{
 				defaultVaule();
 			}
@@ -251,7 +251,7 @@ public class Parser {
 //        	LOG("match--"+ LT(1));
         	consume();
         } else{
-        	throw new Exception(LT(1) .text+" 不匹配 "+Lexer.TOKENS[type]);
+        	throw new Exception(LT(1) .text+" 不匹配 "+Token.TOKENS[type]);
         }
                              
     }
@@ -261,9 +261,13 @@ public class Parser {
     }
     
 	private void consume(int n) throws Exception {
-		for (int i = 0; i < n; i++) {
-			mTokens[P] = mLexer.nextToken();
+		for (int i = 0; i < n;) {
+			final Token tk = mLexer.next();
+			if (Token.SL_COMMENT == tk.type || Token.ML_COMMENT == tk.type)
+				continue;
+			mTokens[P] = tk;
 			P = (P + 1) % K;
+			i++;
 		}
 	}
 	
